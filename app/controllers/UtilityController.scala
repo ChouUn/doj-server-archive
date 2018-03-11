@@ -3,21 +3,12 @@ package controllers
 import javax.inject.{Inject, Singleton}
 
 import daos._
-import models.EntityTable
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
-import play.api.mvc.{AbstractController, ControllerComponents}
-import sangria.execution._
-import sangria.execution.deferred.DeferredResolver
-import sangria.marshalling.ResultMarshaller
+import play.api.mvc.{AbstractController, ControllerComponents, Request, Result}
 import sangria.marshalling.playJson._
-import sangria.parser.QueryParser
-import sangria.renderer.SchemaRenderer
 import sangria.schema.Schema
-import schemas.SchemaDefinition.personFetcher
 import schemas.{Auth, Repository, SchemaDefinition}
-import slick.codegen.SourceCodeGenerator
-import slick.model.Model
 import utils.MyPostgresProfile
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -43,55 +34,113 @@ class UtilityController @Inject()(cc: ControllerComponents,
                                  (implicit exec: ExecutionContext) extends AbstractController(cc) {
   val dbConfig = dbConfigProvider.get[MyPostgresProfile]
 
-  import dbConfig._
-  import dbConfig.profile.api._
-  val repository = Repository.createDatabase()
-  val rejectComplexQuery = QueryReducer.rejectComplexQueries(300, (_: Double, _: Repository) => TooComplexQuery)
-  val exceptionHandler = ExceptionHandler {
-    case (_: ResultMarshaller, TooComplexQuery) => HandledException("Too complex query. Please reduce the field selection.")
-  }
-  // fetch data model
-  private val modelAction = profile.createModel(Some(profile.defaultTables)) // you can filter specific tables here
-  private val modelFuture = db.run(modelAction)
-  // customize code generator
-  private val codegenFuture = modelFuture.map(model => {
-    val newModel = Model(model.tables.filter(_.name.schema.contains("old")), model.options)
+  import dbConfig.profile
+  import profile.api.{Query, TableQuery}
 
-    new SourceCodeGenerator(newModel) {
-      // override mapped table and class name
-      override def entityName: String => String =
-        dbTableName => dbTableName.dropRight(1).toLowerCase.toCamelCase
+  private val executeGraphQLQuery: (Schema[Repository, Unit], JsValue) => Future[Result] = {
+    import sangria.execution._
+    import sangria.execution.deferred.DeferredResolver
+    import sangria.marshalling.ResultMarshaller
+    import sangria.parser.QueryParser
+    import schemas.SchemaDefinition.personFetcher
 
-      override def tableName: String => String =
-        dbTableName => dbTableName.toLowerCase.toCamelCase
+    val repository = Repository.createDatabase()
+    val rejectComplexQuery = QueryReducer.rejectComplexQueries(300, (_: Double, _: Repository) => TooComplexQuery)
+    val exceptionHandler = ExceptionHandler {
+      case (_: ResultMarshaller, TooComplexQuery) => HandledException("Too complex query. Please reduce the field selection.")
+    }
 
-      // add some custom import
-      override def code: String =
-        "import foo.{MyCustomType,MyCustomTypeMapper}" + "\n" + super.code
+    val execute = (schema: Schema[Repository, Unit], queryInfo: JsValue) => {
+      val JsObject(fields) = queryInfo
+      val JsString(query) = fields("query")
+      val operation = fields.get("operationName") collect {
+        case JsString(op) => op
+      }
 
-      // override table generator
-      override def Table = new Table(_) {
-        // disable entity class generation and mapping
-        override def EntityType = new EntityType {
-          override def classEnabled = false
-        }
+      val vars = fields.get("variables") match {
+        case Some(obj: JsObject) => obj
+        case Some(JsString(s)) if s.trim.nonEmpty => Json.parse(s)
+        case _ => JsObject.empty
+      }
 
-        // override contained column generator
-        override def Column = new Column(_) {
-          // use the data model member of this column to change the Scala type,
-          // e.g. to a custom enum or anything else
-          override def rawType: String =
-            if (model.name == "SOME_SPECIAL_COLUMN_NAME") "MyCustomType" else super.rawType
-        }
+      QueryParser.parse(query) match {
+        // query parsed successfully, time to execute it!
+        case Success(queryDocument) =>
+          Executor
+            .execute(schema, queryDocument, repository,
+              variables = vars,
+              operationName = operation,
+              queryReducers = rejectComplexQuery :: Nil,
+              exceptionHandler = exceptionHandler,
+              deferredResolver = DeferredResolver.fetchers(personFetcher)
+            )
+            .map(Ok(_))
+            .recover {
+              case error: QueryAnalysisError => BadRequest(error.resolveError)
+              case error: ErrorWithResolver => InternalServerError(error.resolveError)
+            }
+
+        // can't parse GraphQL query, return error
+        case Failure(error) =>
+          Future {
+            BadRequest(Json.stringify(JsString(error.getMessage)))
+          }
       }
     }
-  })
+    execute
+  }
+
+  private val codegenFuture = {
+    import slick.codegen.SourceCodeGenerator
+    import slick.model.Model
+
+    val modelAction = profile.createModel(Some(profile.defaultTables)) // you can filter specific tables here
+    val modelFuture = dbConfig.db.run(modelAction)
+
+    // customize code generator
+    modelFuture.map(model => {
+      val newModel = Model(model.tables.filter(_.name.schema.contains("old")), model.options)
+
+      new SourceCodeGenerator(newModel) {
+        // override mapped table and class name
+        override def entityName: String => String =
+          dbTableName => dbTableName.dropRight(1).toLowerCase.toCamelCase
+
+        override def tableName: String => String =
+          dbTableName => dbTableName.toLowerCase.toCamelCase
+
+        // add some custom import
+        override def code: String =
+          "import foo.{MyCustomType,MyCustomTypeMapper}" + "\n" + super.code
+
+        // override table generator
+        override def Table = new Table(_) {
+          // disable entity class generation and mapping
+          override def EntityType = new EntityType {
+            override def classEnabled = false
+          }
+
+          // override contained column generator
+          override def Column = new Column(_) {
+            // use the data model member of this column to change the Scala type,
+            // e.g. to a custom enum or anything else
+            override def rawType: String =
+              if (model.name == "SOME_SPECIAL_COLUMN_NAME") "MyCustomType" else super.rawType
+          }
+        }
+      }
+    })
+  }
 
   def sql = Action {
-    def fn[U, T <: slick.relational.RelationalProfile#Table[U]](tq: Query[T, U, Seq] with TableQuery[T])
-                                                               (implicit tag: ClassTag[T]) = {
+    import slick.relational.RelationalProfile
 
-      val tableName = tq.baseTableRow.tableName
+    def generateMigrationSQL[U, T <: RelationalProfile#Table[U]](tableQuery: Query[T, U, Seq] with TableQuery[T])
+                                                                (implicit tag: ClassTag[T]) = {
+      import profile.api.tableQueryToTableQueryExtensionMethods
+      import models.EntityTable
+
+      val tableName = tableQuery.baseTableRow.tableName
       val isEntityTable = classOf[EntityTable] isAssignableFrom tag.runtimeClass
       val createTrigger =
         s"""create trigger \"${tableName}_update_trigger\" before update on \"$tableName\" """ +
@@ -100,19 +149,19 @@ class UtilityController @Inject()(cc: ControllerComponents,
       List(
         s"# --- !$tableName.sql" :: Nil,
         "# --- !Ups" :: Nil,
-        tq.schema.createStatements ++ (if (isEntityTable) createTrigger :: Nil else Nil),
+        tableQuery.schema.createStatements ++ (if (isEntityTable) createTrigger :: Nil else Nil),
         "# --- !Downs" :: Nil,
-        tq.schema.dropStatements
+        tableQuery.schema.dropStatements
       )
     }
 
     val sqlStr = List(
-      fn(TableQuery[userDAO.UserTable]),
-      fn(TableQuery[roleDAO.RoleTable]),
-      fn(TableQuery[permissionDAO.PermissionTable]),
-      fn(TableQuery[userRoleDAO.UserRoleTable]),
-      fn(TableQuery[userPermissionDAO.UserPermissionTable]),
-      fn(TableQuery[rolePermissionDAO.RolePermissionTable])
+      generateMigrationSQL(TableQuery[userDAO.UserTable]),
+      generateMigrationSQL(TableQuery[roleDAO.RoleTable]),
+      generateMigrationSQL(TableQuery[permissionDAO.PermissionTable]),
+      generateMigrationSQL(TableQuery[userRoleDAO.UserRoleTable]),
+      generateMigrationSQL(TableQuery[userPermissionDAO.UserPermissionTable]),
+      generateMigrationSQL(TableQuery[rolePermissionDAO.RolePermissionTable])
     )
       .map(_.flatten.map(s => if (s.startsWith("# --- !")) s else s + ";").mkString("\n" * 2))
       .mkString("\n" * 4)
@@ -121,62 +170,25 @@ class UtilityController @Inject()(cc: ControllerComponents,
   }
 
   def codegen = Action.async {
-    codegenFuture.map({ case codegen =>
-      Ok(codegen.code)
-    })
+    codegenFuture
+      .map(codegen => Ok(codegen.code))
   }
 
   def graphiql = Action {
     Ok(views.html.graphiql())
   }
 
-  def graphql = Action.async(parse.json) { request ⇒
+  def graphql = Action.async(parse.json) { request: Request[JsValue] =>
     val queryInfo = request.body.as[JsValue]
     executeGraphQLQuery(SchemaDefinition.schema, queryInfo)
   }
 
-  def executeGraphQLQuery(schema: Schema[Repository, Unit], queryInfo: JsValue) = {
-    val JsObject(fields) = queryInfo
-    val JsString(query) = fields("query")
-    val operation = fields.get("operationName") collect {
-      case JsString(op) => op
-    }
-
-    val vars = fields.get("variables") match {
-      case Some(obj: JsObject) ⇒ obj
-      case Some(JsString(s)) if s.trim.nonEmpty => Json.parse(s)
-      case _ => JsObject.empty
-    }
-
-    QueryParser.parse(query) match {
-
-      // query parsed successfully, time to execute it!
-      case Success(queryDocument) =>
-        Executor.execute(schema, queryDocument, repository,
-          variables = vars,
-          operationName = operation,
-          queryReducers = rejectComplexQuery :: Nil,
-          exceptionHandler = exceptionHandler,
-          deferredResolver = DeferredResolver.fetchers(personFetcher)
-        )
-          .map(Ok(_))
-          .recover {
-            case error: QueryAnalysisError ⇒ BadRequest(error.resolveError)
-            case error: ErrorWithResolver ⇒ InternalServerError(error.resolveError)
-          }
-
-      // can't parse GraphQL query, return error
-      case Failure(error) =>
-        //        BadRequest(Json.stringify(JsObject("error" → JsString(error.getMessage))))
-        Future {
-          BadRequest(Json.stringify(JsString(error.getMessage)))
-        }
-    }
-  }
-
   def sangria = Action {
+    import sangria.renderer.SchemaRenderer
+
     Ok(SchemaRenderer renderSchema Auth.schema)
   }
 
   case object TooComplexQuery extends Exception
+
 }
