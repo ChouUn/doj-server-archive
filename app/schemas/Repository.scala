@@ -26,9 +26,9 @@ class Repository(db: Database) {
     db.run(People.filter(_.id === id).result.headOption)
 
   def findFriends(personIds: Seq[String]) =
-    db.run(friendsQuery(personIds).result).map(result ⇒
+    db.run(friendsQuery(personIds).result).map(result =>
       result.groupBy(_._2.id).toVector.map {
-        case (_, friends) ⇒ friends.map(_._1.personId) → friends.head._2
+        case (_, friends) => friends.map(_._1.personId) → friends.head._2
       })
 
   def close() = db.close()

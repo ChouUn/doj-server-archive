@@ -18,8 +18,8 @@ object Auth {
   def parseOffsetDateTime(s: String) = Try({
     OffsetDateTime.parse(s)
   }) match {
-    case Success(date) ⇒ Right(date)
-    case Failure(_) ⇒ Left(DateCoercionViolation)
+    case Success(date) => Right(date)
+    case Failure(_) => Left(DateCoercionViolation)
   }
 
   implicit val OffsetDateTimeType = ScalarType[OffsetDateTime]("OffsetDateTime",
@@ -28,8 +28,8 @@ object Auth {
       case _ => Left(DateCoercionViolation)
     },
     coerceUserInput = {
-      case s: String ⇒ parseOffsetDateTime(s)
-      case _ ⇒ Left(DateCoercionViolation)
+      case s: String => parseOffsetDateTime(s)
+      case _ => Left(DateCoercionViolation)
     },
     coerceOutput = (d, _) => d
   )
