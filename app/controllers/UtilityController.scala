@@ -7,8 +7,9 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents, Request, Result}
 import sangria.marshalling.playJson._
+import sangria.renderer.SchemaRenderer
 import sangria.schema.Schema
-import schemas.{Auth, Repository, SchemaDefinition}
+import schemas.{MyContext, SchemaDefinition, SchemaQuery}
 import utils.MyPostgresProfile
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,60 +37,6 @@ class UtilityController @Inject()(cc: ControllerComponents,
 
   import dbConfig.profile
   import profile.api.{Query, TableQuery}
-
-  private val executeGraphQLQuery: (Schema[Repository, Unit], JsValue) => Future[Result] = {
-    import sangria.execution._
-    import sangria.execution.deferred.DeferredResolver
-    import sangria.marshalling.ResultMarshaller
-    import sangria.parser.QueryParser
-    import schemas.SchemaDefinition.personFetcher
-
-    val repository = Repository.createDatabase()
-    val rejectComplexQuery = QueryReducer.rejectComplexQueries(300, (_: Double, _: Repository) => TooComplexQuery)
-    val exceptionHandler = ExceptionHandler {
-      case (_: ResultMarshaller, TooComplexQuery) => HandledException("Too complex query. Please reduce the field selection.")
-    }
-
-    val execute = (schema: Schema[Repository, Unit], queryInfo: JsValue) => {
-      val JsObject(fields) = queryInfo
-      val JsString(query) = fields("query")
-      val operation = fields.get("operationName") collect {
-        case JsString(op) => op
-      }
-
-      val vars = fields.get("variables") match {
-        case Some(obj: JsObject) => obj
-        case Some(JsString(s)) if s.trim.nonEmpty => Json.parse(s)
-        case _ => JsObject.empty
-      }
-
-      QueryParser.parse(query) match {
-        // query parsed successfully, time to execute it!
-        case Success(queryDocument) =>
-          Executor
-            .execute(schema, queryDocument, repository,
-              variables = vars,
-              operationName = operation,
-              queryReducers = rejectComplexQuery :: Nil,
-              exceptionHandler = exceptionHandler,
-              deferredResolver = DeferredResolver.fetchers(personFetcher)
-            )
-            .map(Ok(_))
-            .recover {
-              case error: QueryAnalysisError => BadRequest(error.resolveError)
-              case error: ErrorWithResolver => InternalServerError(error.resolveError)
-            }
-
-        // can't parse GraphQL query, return error
-        case Failure(error) =>
-          Future {
-            BadRequest(Json.stringify(JsString(error.getMessage)))
-          }
-      }
-    }
-    execute
-  }
-
   private val codegenFuture = {
     import slick.codegen.SourceCodeGenerator
     import slick.model.Model
@@ -137,8 +84,8 @@ class UtilityController @Inject()(cc: ControllerComponents,
 
     def generateMigrationSQL[U, T <: RelationalProfile#Table[U]](tableQuery: Query[T, U, Seq] with TableQuery[T])
                                                                 (implicit tag: ClassTag[T]) = {
-      import profile.api.tableQueryToTableQueryExtensionMethods
       import models.EntityTable
+      import profile.api.tableQueryToTableQueryExtensionMethods
 
       val tableName = tableQuery.baseTableRow.tableName
       val isEntityTable = classOf[EntityTable] isAssignableFrom tag.runtimeClass
@@ -183,12 +130,52 @@ class UtilityController @Inject()(cc: ControllerComponents,
     executeGraphQLQuery(SchemaDefinition.schema, queryInfo)
   }
 
-  def sangria = Action {
-    import sangria.renderer.SchemaRenderer
+  private def executeGraphQLQuery(schema: Schema[MyContext, Unit], queryInfo: JsValue): Future[Result] = {
+    import sangria.execution._
+    import sangria.parser.QueryParser
 
-    Ok(SchemaRenderer renderSchema Auth.schema)
+    val JsObject(fields) = queryInfo
+    val JsString(query) = fields("query")
+    val operation = fields.get("operationName") collect {
+      case JsString(op) => op
+    }
+
+    val vars = fields.get("variables") match {
+      case Some(obj: JsObject) => obj
+      case Some(JsString(s)) if s.trim.nonEmpty => Json.parse(s)
+      case _ => JsObject.empty
+    }
+
+    QueryParser.parse(query) match {
+      // query parsed successfully, time to execute it!
+      case Success(queryDocument) =>
+        Executor
+          .execute(
+            schema,
+            queryDocument,
+            MyContext(userDAO),
+            variables = vars,
+            operationName = operation,
+            queryReducers = SchemaDefinition.rejectComplexQuery :: Nil,
+            exceptionHandler = SchemaDefinition.ErrorHandler,
+            deferredResolver = SchemaDefinition.Resolver
+          )
+          .map(Ok(_))
+          .recover {
+            case error: QueryAnalysisError => BadRequest(error.resolveError)
+            case error: ErrorWithResolver => InternalServerError(error.resolveError)
+          }
+
+      // can't parse GraphQL query, return error
+      case Failure(error) =>
+        Future {
+          BadRequest(Json.stringify(JsString(error.getMessage)))
+        }
+    }
   }
 
-  case object TooComplexQuery extends Exception
+  def schema = Action {
+    Ok(SchemaRenderer renderSchema SchemaDefinition.schema)
+  }
 
 }

@@ -13,7 +13,7 @@ GET     /sql                        controllers.UtilityController.sql
 GET     /codegen                    controllers.UtilityController.codegen
 GET     /graphiql                   controllers.UtilityController.graphiql
 POST    /graphql                    controllers.UtilityController.graphql
-GET     /sangria                    controllers.UtilityController.sangria
+GET     /schema                     controllers.UtilityController.schema
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
