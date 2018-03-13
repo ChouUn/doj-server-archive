@@ -7,8 +7,8 @@
 -->
 <!DOCTYPE html>
 <html>
-<head>
-    <style>
+    <head>
+        <style>
         body {
             height: 100%;
             margin: 0;
@@ -21,17 +21,17 @@
         }
     </style>
 
-    <link href="https://cdn.bootcss.com/graphiql/0.11.11/graphiql.min.css" rel="stylesheet">
-    <script src="https://cdn.bootcss.com/es6-promise/4.0.5/es6-promise.auto.min.js"></script>
-    <script src="https://cdn.bootcss.com/fetch/0.9.0/fetch.min.js"></script>
-    <script src="https://cdn.bootcss.com/react/15.4.2/react.min.js"></script>
-    <script src="https://cdn.bootcss.com/react/15.4.2/react-dom.min.js"></script>
-    <script src="https://cdn.bootcss.com/graphiql/0.11.11/graphiql.min.js"></script>
+        <link href="https://cdn.bootcss.com/graphiql/0.11.11/graphiql.min.css" rel="stylesheet">
+        <script src="https://cdn.bootcss.com/es6-promise/4.0.5/es6-promise.auto.min.js"></script>
+        <script src="https://cdn.bootcss.com/fetch/0.9.0/fetch.min.js"></script>
+        <script src="https://cdn.bootcss.com/react/15.4.2/react.min.js"></script>
+        <script src="https://cdn.bootcss.com/react/15.4.2/react-dom.min.js"></script>
+        <script src="https://cdn.bootcss.com/graphiql/0.11.11/graphiql.min.js"></script>
 
-</head>
-<body>
-<div id="graphiql">Loading...</div>
-<script>
+    </head>
+    <body>
+        <div id="graphiql">Loading...</div>
+        <script>
 
     /**
      * This GraphiQL example illustrates how to use some of GraphiQL's props
@@ -42,14 +42,14 @@
      * various React params to enable interesting integrations.
      */
 
-        // Parse the search string to get url parameters.
+            // Parse the search string to get url parameters.
     var search = window.location.search;
     var parameters = {};
     search.substr(1).split('&').forEach(function (entry) {
         var eq = entry.indexOf('=');
         if (eq >= 0) {
             parameters[decodeURIComponent(entry.slice(0, eq))] =
-                decodeURIComponent(entry.slice(eq + 1));
+                    decodeURIComponent(entry.slice(eq + 1));
         }
     });
 
@@ -57,7 +57,7 @@
     if (parameters.variables) {
         try {
             parameters.variables =
-                JSON.stringify(JSON.parse(parameters.variables), null, 2);
+                    JSON.stringify(JSON.parse(parameters.variables), null, 2);
         } catch (e) {
             // Do nothing, we want to display the invalid JSON as a string, rather
             // than present an error.
@@ -86,7 +86,7 @@
             return Boolean(parameters[key]);
         }).map(function (key) {
             return encodeURIComponent(key) + '=' +
-                encodeURIComponent(parameters[key]);
+                    encodeURIComponent(parameters[key]);
         }).join('&');
         history.replaceState(null, null, newSearch);
     }
@@ -121,17 +121,17 @@
     // how you can customize GraphiQL by providing different values or
     // additional child elements.
     ReactDOM.render(
-        React.createElement(GraphiQL, {
-            fetcher: graphQLFetcher,
-            query: parameters.query,
-            variables: parameters.variables,
-            operationName: parameters.operationName,
-            onEditQuery: onEditQuery,
-            onEditVariables: onEditVariables,
-            onEditOperationName: onEditOperationName
-        }),
-        document.getElementById('graphiql')
+            React.createElement(GraphiQL, {
+                fetcher: graphQLFetcher,
+                query: parameters.query,
+                variables: parameters.variables,
+                operationName: parameters.operationName,
+                onEditQuery: onEditQuery,
+                onEditVariables: onEditVariables,
+                onEditOperationName: onEditOperationName
+            }),
+            document.getElementById('graphiql')
     );
 </script>
-</body>
+    </body>
 </html>

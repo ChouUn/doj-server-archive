@@ -1,5 +1,6 @@
-package models
+package mixins
 
+import models.UserPermission
 import play.api.db.slick.HasDatabaseConfigProvider
 import utils.MyPostgresProfile
 
@@ -7,8 +8,6 @@ trait UserPermissionMixin extends Object with UserMixin with PermissionMixin {
   self: HasDatabaseConfigProvider[MyPostgresProfile] =>
 
   import profile.api._
-
-  case class UserPermission(id: Int, userId: Int, permissionId: Int)
 
   class UserPermissionTable(tag: Tag) extends Table[UserPermission](tag, "auth_user_permission") with RelationTable {
 

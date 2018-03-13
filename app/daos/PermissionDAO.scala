@@ -2,7 +2,8 @@ package daos
 
 import javax.inject.{Inject, Singleton}
 
-import models.PermissionMixin
+import mixins.PermissionMixin
+import models.Permission
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import utils.MyPostgresProfile
 

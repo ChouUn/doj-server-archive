@@ -9,7 +9,7 @@ import play.api.mvc.{AbstractController, ControllerComponents, Request, Result}
 import sangria.marshalling.playJson._
 import sangria.renderer.SchemaRenderer
 import sangria.schema.Schema
-import schemas.{MyContext, SchemaDefinition, SchemaQuery}
+import schemas.{MyContext, SchemaDefinition}
 import utils.MyPostgresProfile
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,6 +37,7 @@ class UtilityController @Inject()(cc: ControllerComponents,
 
   import dbConfig.profile
   import profile.api.{Query, TableQuery}
+
   private val codegenFuture = {
     import slick.codegen.SourceCodeGenerator
     import slick.model.Model
@@ -84,7 +85,7 @@ class UtilityController @Inject()(cc: ControllerComponents,
 
     def generateMigrationSQL[U, T <: RelationalProfile#Table[U]](tableQuery: Query[T, U, Seq] with TableQuery[T])
                                                                 (implicit tag: ClassTag[T]) = {
-      import models.EntityTable
+      import mixins.EntityTable
       import profile.api.tableQueryToTableQueryExtensionMethods
 
       val tableName = tableQuery.baseTableRow.tableName

@@ -1,5 +1,6 @@
-package models
+package mixins
 
+import models.UserRole
 import play.api.db.slick.HasDatabaseConfigProvider
 import utils.MyPostgresProfile
 
@@ -7,8 +8,6 @@ trait UserRoleMixin extends Object with UserMixin with RoleMixin {
   self: HasDatabaseConfigProvider[MyPostgresProfile] =>
 
   import profile.api._
-
-  case class UserRole(id: Int, userId: Int, roleId: Int)
 
   class UserRoleTable(tag: Tag) extends Table[UserRole](tag, "auth_user_role") with RelationTable {
 

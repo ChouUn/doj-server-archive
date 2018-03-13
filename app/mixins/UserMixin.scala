@@ -1,8 +1,8 @@
-package models
+package mixins
 
 import java.time.OffsetDateTime
 
-import models.UserMixin.User
+import models.User
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.{GetResult => GR}
 import utils.MyPostgresProfile
@@ -22,6 +22,8 @@ trait UserMixin {
       <<[OffsetDateTime], <<[OffsetDateTime], <<[Int]
     ))
   }
+
+  val Users = new TableQuery(tag => new UserTable(tag))
 
   class UserTable(tag: Tag) extends Table[User](tag, "auth_user") with EntityTable {
 
@@ -67,15 +69,5 @@ trait UserMixin {
     def nickname_like = index("auth_user_nickname_like", nickname)
 
   }
-
-  val Users = new TableQuery(tag => new UserTable(tag))
-
-}
-
-object UserMixin {
-
-  case class User(id: Int, account: String, email: String, password: String,
-                  nickname: String, lastLogin: Option[OffsetDateTime] = None, isActive: Boolean,
-                  createdAt: OffsetDateTime, updatedAt: OffsetDateTime, version: Int)
 
 }

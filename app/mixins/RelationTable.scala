@@ -1,4 +1,4 @@
-package models
+package mixins
 
 import slick.lifted.Rep
 

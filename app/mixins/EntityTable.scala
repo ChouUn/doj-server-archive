@@ -1,5 +1,4 @@
-package models
-
+package mixins
 
 import java.time.OffsetDateTime
 

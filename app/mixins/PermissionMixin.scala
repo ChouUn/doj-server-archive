@@ -1,7 +1,8 @@
-package models
+package mixins
 
 import java.time.OffsetDateTime
 
+import models.Permission
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.{GetResult => GR}
 import utils.MyPostgresProfile
@@ -10,9 +11,6 @@ trait PermissionMixin {
   self: HasDatabaseConfigProvider[MyPostgresProfile] =>
 
   import profile.api._
-
-  case class Permission(id: Int, name: String, operation: String,
-                        createdAt: OffsetDateTime, updatedAt: OffsetDateTime, version: Int)
 
   implicit def GetResultPermission(implicit e0: GR[Int], e1: GR[String],
                                    e2: GR[OffsetDateTime]): GR[Permission] = GR { positionedResult =>

@@ -1,7 +1,8 @@
-package models
+package mixins
 
 import java.time.OffsetDateTime
 
+import models.Role
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.{GetResult => GR}
 import utils.MyPostgresProfile
@@ -20,9 +21,6 @@ trait RoleMixin {
       <<[Int], <<[String], <<[OffsetDateTime], <<[OffsetDateTime], <<[Int]
     ))
   }
-
-  case class Role(id: Int, name: String,
-                  createdAt: OffsetDateTime, updatedAt: OffsetDateTime, version: Int)
 
   class RoleTable(tag: Tag) extends Table[Role](tag, "auth_role") with EntityTable {
 
