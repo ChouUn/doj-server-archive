@@ -16,7 +16,7 @@ object SchemaDefinition {
       Field("allUser", ListType(UserType),
         description = Some("description"),
         complexity = constantComplexity(10),
-        resolve = _.ctx.userDAO.list()
+        resolve = _.ctx.userDAO.all()
       )
     ))
   val UsernameArg = Argument("username", StringType)

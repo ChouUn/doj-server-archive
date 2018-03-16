@@ -37,6 +37,7 @@ libraryDependencies ++= Seq(
   "org.pac4j" % "play-pac4j" % "4.1.1",
 
   "org.sangria-graphql" %% "sangria" % sangriaVersion,
+  "org.sangria-graphql" %% "sangria-relay" % sangriaVersion,
   "org.sangria-graphql" %% "sangria-play-json" % "1.0.4",
 
   // https://mvnrepository.com/artifact/com.h2database/h2

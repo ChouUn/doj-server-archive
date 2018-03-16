@@ -1,7 +1,7 @@
 package schemas
 
-import daos.UserDAO
+import daos.{RoleDAO, UserDAO, UserRoleDAO}
 
-case class MyContext(userDAO: UserDAO) {
+case class MyContext(userDAO: UserDAO, roleDAO: RoleDAO, userRoleDAO: UserRoleDAO) {
 
 }
