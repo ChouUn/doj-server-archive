@@ -1,5 +1,6 @@
 package schemas
 
+import models.User
 import sangria.execution.deferred._
 import sangria.execution.{ExceptionHandler, HandledException, QueryReducer}
 import sangria.marshalling.ResultMarshaller
@@ -16,7 +17,11 @@ object SchemaDefinition {
       Field("allUser", ListType(UserType),
         description = Some("description"),
         complexity = constantComplexity(10),
-        resolve = _.ctx.userDAO.all()
+        resolve = ctx => {
+          import ctx.ctx.userDAO._
+          val usersQuery = getAllUsers(Users)
+          run[User, UserTable](usersQuery)
+        }
       )
     ))
   val UsernameArg = Argument("username", StringType)

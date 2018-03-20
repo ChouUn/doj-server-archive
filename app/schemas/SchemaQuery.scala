@@ -16,7 +16,9 @@ object SchemaQuery {
         description = Some(""),
         arguments = Connection.Args.All,
         resolve = ctx => {
-          val rolesFuture = ctx.ctx.userRoleDAO.getRolesByUserId(ctx.value.id)
+          import ctx.ctx.userRoleDAO._
+          val rolesQuery = getRolesByUserId(ctx.value.id)
+          val rolesFuture = run[Role, RoleTable](rolesQuery)
           Connection.connectionFromFutureSeq(rolesFuture, ConnectionArgs(ctx))
         }),
     )
