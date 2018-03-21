@@ -1,14 +1,12 @@
 package daos
 
 import javax.inject.{Inject, Singleton}
-
 import mixins.RolePermissionMixin
 import models.RolePermission
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import utils.MyPostgresProfile
 
-import scala.concurrent.{ExecutionContext, Future}
-
+import scala.concurrent.ExecutionContext
 
 @Singleton
 class RolePermissionDAO @Inject()(val dbConfigProvider: DatabaseConfigProvider)
@@ -17,8 +15,9 @@ class RolePermissionDAO @Inject()(val dbConfigProvider: DatabaseConfigProvider)
 
   import profile.api._
 
-  def list(): Future[Seq[RolePermission]] = db.run {
-    RolePermissions.result
+  def getAllRolePermissions(rolePermissions: Query[RoleTable, RolePermission, Seq]
+                           ): Query[RoleTable, RolePermission, Seq] = {
+    rolePermissions
   }
 
 }

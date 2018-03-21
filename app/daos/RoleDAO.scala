@@ -8,7 +8,6 @@ import utils.MyPostgresProfile
 
 import scala.concurrent.ExecutionContext
 
-
 @Singleton
 class RoleDAO @Inject()(val dbConfigProvider: DatabaseConfigProvider)
                        (implicit ec: ExecutionContext)

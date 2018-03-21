@@ -1,8 +1,7 @@
 package controllers
 
-import javax.inject.{Inject, Singleton}
-
 import daos._
+import javax.inject.{Inject, Singleton}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents, Request, Result}
