@@ -46,7 +46,7 @@ libraryDependencies ++= Seq(
   "commons-io" % "commons-io" % "2.6"
 )
 
-dependencyOverrides ++= Set(
+dependencyOverrides ++= Seq(
   // https://mvnrepository.com/artifact/org.postgresql/postgresql
   "org.postgresql" % "postgresql" % "9.4.1212"
 )
