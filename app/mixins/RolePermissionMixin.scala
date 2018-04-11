@@ -9,9 +9,11 @@ trait RolePermissionMixin extends Object with RoleMixin with PermissionMixin {
 
   import profile.api._
 
-  class RolePermissionTable(tag: Tag) extends Table[RolePermission](tag, "auth_role_permission") with RelationTable {
+  class RolePermissionTable(tag: Tag)
+    extends Table[RolePermission](tag, "auth_role_permission")
+      with RelationTable {
 
-    def * = (id, roleId, permissionId) <> (RolePermission.tupled, RolePermission.unapply)
+    def * = (id, roleId, permissionId).mapTo[RolePermission]
 
     def ? = (Rep.Some(id), Rep.Some(roleId), Rep.Some(permissionId)).shaped.<>(
       { r =>
@@ -27,19 +29,22 @@ trait RolePermissionMixin extends Object with RoleMixin with PermissionMixin {
 
     def permissionId: Rep[Int] = column[Int]("permission_id")
 
-    def role = foreignKey("auth_role_permission_role_id_fk_auth_role_id", roleId, Roles)(
-      _.id,
-      onUpdate = ForeignKeyAction.NoAction,
-      onDelete = ForeignKeyAction.NoAction
-    )
+    def role =
+      foreignKey("auth_role_permission_role_id_fk_auth_role_id", roleId, Roles)(
+        _.id,
+        onUpdate = ForeignKeyAction.NoAction,
+        onDelete = ForeignKeyAction.NoAction
+      )
 
-    def permission = foreignKey("auth_role_permission_permission_id_fk_auth_permission_id", permissionId, Permissions)(
-      _.id,
-      onUpdate = ForeignKeyAction.NoAction,
-      onDelete = ForeignKeyAction.NoAction
-    )
+    def permission =
+      foreignKey("auth_role_permission_permission_id_fk_auth_permission_id", permissionId, Permissions)(
+        _.id,
+        onUpdate = ForeignKeyAction.NoAction,
+        onDelete = ForeignKeyAction.NoAction
+      )
 
-    def role_permission_uniq = index("auth_role_permission_role_id_permission_id_uniq", (roleId, permissionId), unique = true)
+    def role_permission_uniq =
+      index("auth_role_permission_role_id_permission_id_uniq", (roleId, permissionId), unique = true)
 
   }
 

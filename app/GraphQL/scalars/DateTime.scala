@@ -1,4 +1,4 @@
-package schemas.scalar
+package GraphQL.scalars
 
 import java.time.OffsetDateTime
 
@@ -19,7 +19,7 @@ object DateTime {
     case Failure(_) => Left(DateCoercionViolation)
   }
 
-  implicit val OffsetDateTimeType = ScalarType[OffsetDateTime]("DateTime",
+  implicit val OffsetDateTimeType: ScalarType[OffsetDateTime] = ScalarType[OffsetDateTime]("DateTime",
     coerceInput = {
       case ast.StringValue(s, _, _, _, _) => parseOffsetDateTime(s)
       case _ => Left(DateCoercionViolation)

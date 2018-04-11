@@ -25,15 +25,13 @@ trait UserMixin {
 
   val Users = new TableQuery(tag => new UserTable(tag))
 
-  class UserTable(tag: Tag) extends Table[User](tag, "auth_user") with EntityTable {
+  class UserTable(tag: Tag)
+    extends Table[User](tag, "auth_user")
+      with EntityTable {
 
-    override def * = (
-      id, account, email, password,
-      nickname, lastLogin, isActive,
-      createdAt, updatedAt, version
-    ) <> (User.tupled, User.unapply)
+    override def * =
+      (id, account, email, password, nickname, lastLogin, isActive, createdAt, updatedAt, version).mapTo[User]
 
-    /** Maps whole row to an option. Useful for outer joins. */
     def ? = (
       Rep.Some(id), Rep.Some(account), Rep.Some(email), Rep.Some(password),
       Rep.Some(nickname), lastLogin, Rep.Some(isActive),
@@ -60,9 +58,11 @@ trait UserMixin {
 
     def isActive = column[Boolean]("is_active", O.Default(true))
 
-    def createdAt = column[OffsetDateTime]("created_at", O.SqlType("TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP"))
+    def createdAt =
+      column[OffsetDateTime]("created_at", O.SqlType("TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP"))
 
-    def updatedAt = column[OffsetDateTime]("updated_at", O.SqlType("TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP"))
+    def updatedAt =
+      column[OffsetDateTime]("updated_at", O.SqlType("TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP"))
 
     def version = column[Int]("version", O.Default(1))
 

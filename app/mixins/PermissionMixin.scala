@@ -20,9 +20,12 @@ trait PermissionMixin {
     ))
   }
 
-  class PermissionTable(tag: Tag) extends Table[Permission](tag, "auth_permission") with EntityTable {
+  class PermissionTable(tag: Tag)
+    extends Table[Permission](tag, "auth_permission")
+      with EntityTable {
 
-    override def * = (id, entity, operation, createdAt, updatedAt, version) <> (Permission.tupled, Permission.unapply)
+    override def * =
+      (id, entity, operation, createdAt, updatedAt, version).mapTo[Permission]
 
     def ? = (
       Rep.Some(id), Rep.Some(entity), Rep.Some(operation),
@@ -41,15 +44,18 @@ trait PermissionMixin {
 
     def operation = column[String]("operation", O.Length(128, varying = true))
 
-    def createdAt = column[OffsetDateTime]("created_at", O.SqlType("TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP"))
+    def createdAt =
+      column[OffsetDateTime]("created_at", O.SqlType("TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP"))
 
-    def updatedAt = column[OffsetDateTime]("updated_at", O.SqlType("TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP"))
+    def updatedAt =
+      column[OffsetDateTime]("updated_at", O.SqlType("TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP"))
 
     def version = column[Int]("version", O.Default(1))
 
     def entity_index = index("auth_permission_entity_idx", entity)
 
-    def entity_operation_uniq = index("auth_permission_entity_operation_uniq", (entity, operation), unique = true)
+    def entity_operation_uniq =
+      index("auth_permission_entity_operation_uniq", (entity, operation), unique = true)
 
   }
 

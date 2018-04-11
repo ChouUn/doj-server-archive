@@ -1,4 +1,4 @@
-package schemas
+package GraphQL
 
 import daos.{RoleDAO, UserDAO, UserRoleDAO}
 

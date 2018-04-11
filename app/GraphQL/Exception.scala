@@ -1,6 +1,6 @@
-package schemas
+package GraphQL
 
-object SchemaException {
+object Exception {
 
   case class TooComplexQueryException() extends Exception
 

@@ -8,7 +8,7 @@ import play.api.mvc.{AbstractController, ControllerComponents, Request, Result}
 import sangria.marshalling.playJson._
 import sangria.renderer.SchemaRenderer
 import sangria.schema.Schema
-import schemas.{MyContext, SchemaDefinition}
+import GraphQL.{MyContext, Utility}
 import utils.MyPostgresProfile
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -127,7 +127,7 @@ class UtilityController @Inject()(cc: ControllerComponents,
 
   def graphql = Action.async(parse.json) { request: Request[JsValue] =>
     val queryInfo = request.body.as[JsValue]
-    executeGraphQLQuery(SchemaDefinition.schema, queryInfo)
+    executeGraphQLQuery(Utility.schema, queryInfo)
   }
 
   private def executeGraphQLQuery(schema: Schema[MyContext, Unit], queryInfo: JsValue): Future[Result] = {
@@ -156,9 +156,9 @@ class UtilityController @Inject()(cc: ControllerComponents,
             variables = vars,
             userContext = MyContext(userDAO, roleDAO, userRoleDAO),
             operationName = operation,
-            queryReducers = SchemaDefinition.rejectComplexQuery :: Nil,
-            exceptionHandler = SchemaDefinition.ErrorHandler,
-            deferredResolver = SchemaDefinition.Resolver
+            queryReducers = Utility.rejectComplexQuery :: Nil,
+            exceptionHandler = Utility.ErrorHandler,
+            deferredResolver = Utility.Resolver
           )
           .map(Ok(_))
           .recover {
@@ -175,7 +175,7 @@ class UtilityController @Inject()(cc: ControllerComponents,
   }
 
   def schema = Action {
-    Ok(SchemaRenderer renderSchema SchemaDefinition.schema)
+    Ok(SchemaRenderer renderSchema Utility.schema)
   }
 
 }

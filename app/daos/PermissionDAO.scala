@@ -12,13 +12,8 @@ import scala.concurrent.ExecutionContext
 class PermissionDAO @Inject()(val dbConfigProvider: DatabaseConfigProvider)
                              (implicit ec: ExecutionContext)
   extends PermissionMixin
-    with HasDatabaseConfigProvider[MyPostgresProfile]
-    with Runnable {
+    with HasDatabaseConfigProvider[MyPostgresProfile] {
 
   import profile.api._
-
-  def getAllPermissions(permissions: Query[PermissionTable, Permission, Seq]): Query[PermissionTable, Permission, Seq] = {
-    permissions
-  }
 
 }

@@ -9,9 +9,11 @@ trait UserRoleMixin extends Object with UserMixin with RoleMixin {
 
   import profile.api._
 
-  class UserRoleTable(tag: Tag) extends Table[UserRole](tag, "auth_user_role") with RelationTable {
+  class UserRoleTable(tag: Tag)
+    extends Table[UserRole](tag, "auth_user_role")
+      with RelationTable {
 
-    def * = (id, userId, roleId) <> (UserRole.tupled, UserRole.unapply)
+    def * = (id, userId, roleId).mapTo[UserRole]
 
     def ? = (Rep.Some(id), Rep.Some(userId), Rep.Some(roleId)).shaped.<>(
       { r =>
@@ -27,19 +29,22 @@ trait UserRoleMixin extends Object with UserMixin with RoleMixin {
 
     def roleId: Rep[Int] = column[Int]("role_id")
 
-    def user = foreignKey("auth_user_role_user_id_fk_auth_user_id", userId, Users)(
-      _.id,
-      onUpdate = ForeignKeyAction.NoAction,
-      onDelete = ForeignKeyAction.NoAction
-    )
+    def user =
+      foreignKey("auth_user_role_user_id_fk_auth_user_id", userId, Users)(
+        _.id,
+        onUpdate = ForeignKeyAction.NoAction,
+        onDelete = ForeignKeyAction.NoAction
+      )
 
-    def role = foreignKey("auth_user_role_role_id_fk_auth_role_id", roleId, Roles)(
-      _.id,
-      onUpdate = ForeignKeyAction.NoAction,
-      onDelete = ForeignKeyAction.NoAction
-    )
+    def role =
+      foreignKey("auth_user_role_role_id_fk_auth_role_id", roleId, Roles)(
+        _.id,
+        onUpdate = ForeignKeyAction.NoAction,
+        onDelete = ForeignKeyAction.NoAction
+      )
 
-    def user_role_uniq = index("auth_user_role_user_id_role_id_uniq", (userId, roleId), unique = true)
+    def user_role_uniq =
+      index("auth_user_role_user_id_role_id_uniq", (userId, roleId), unique = true)
 
   }
 

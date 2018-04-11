@@ -2,29 +2,33 @@ package daos
 
 import javax.inject.{Inject, Singleton}
 import mixins.UserRoleMixin
-import models.{Role, User}
+import models.{Role, User, UserRole}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import utils.MyPostgresProfile
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class UserRoleDAO @Inject()(val dbConfigProvider: DatabaseConfigProvider)
                            (implicit ec: ExecutionContext)
   extends UserRoleMixin
-    with HasDatabaseConfigProvider[MyPostgresProfile]
-    with Runnable {
+    with HasDatabaseConfigProvider[MyPostgresProfile] {
 
   import profile.api._
 
-  def getRolesByUserId(userId: Int): Query[RoleTable, Role, Seq] =
-    for (ur <- UserRoles if ur.userId === userId;
-         r <- Roles if ur.roleId === r.id
-    ) yield r
+  def getByIds(ids: Seq[Int]): Future[Seq[UserRole]] =
+    db.run {
+      (UserRoles filter (_.id inSet ids)).result
+    }
 
-  def getUsersByRoleId(roleId: Int): Query[UserTable, User, Seq] =
-    for (ur <- UserRoles if ur.roleId === roleId;
-         u <- Users if ur.userId === u.id
-    ) yield u
+  def getByUserIds(userIds: Seq[Int]): Future[Seq[UserRole]] =
+    db.run {
+      (UserRoles filter (_.userId inSet userIds)).result
+    }
+
+  def getByRoleIds(roleIds: Seq[Int]): Future[Seq[UserRole]] =
+    db.run {
+      (UserRoles filter (_.roleId inSet roleIds)).result
+    }
 
 }

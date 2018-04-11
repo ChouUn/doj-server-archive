@@ -22,19 +22,11 @@ trait RoleMixin {
     ))
   }
 
-  class RoleTable(tag: Tag) extends Table[Role](tag, "auth_role") with EntityTable {
+  class RoleTable(tag: Tag)
+    extends Table[Role](tag, "auth_role")
+      with EntityTable {
 
-    override def * = (id, name, createdAt, updatedAt, version) <> (Role.tupled, Role.unapply)
-
-    def createdAt = column[OffsetDateTime]("created_at", O.SqlType("TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP"))
-
-    def updatedAt = column[OffsetDateTime]("updated_at", O.SqlType("TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP"))
-
-    def version = column[Int]("version", O.Default(1))
-
-    def id: Rep[Int] = column[Int]("id", O.PrimaryKey, O.AutoInc)
-
-    def name = column[String]("name", O.Length(128, varying = true), O.Unique)
+    override def * = (id, name, createdAt, updatedAt, version).mapTo[Role]
 
     def ? = (
       Rep.Some(id), Rep.Some(name),
@@ -46,6 +38,18 @@ trait RoleMixin {
       },
       (_: Any) => throw new Exception("Inserting into ? projection not supported.")
     )
+
+    def id: Rep[Int] = column[Int]("id", O.PrimaryKey, O.AutoInc)
+
+    def name = column[String]("name", O.Length(128, varying = true), O.Unique)
+
+    def createdAt =
+      column[OffsetDateTime]("created_at", O.SqlType("TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP"))
+
+    def updatedAt =
+      column[OffsetDateTime]("updated_at", O.SqlType("TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP"))
+
+    def version = column[Int]("version", O.Default(1))
 
     def name_like = index("auth_role_name_like", name)
 
