@@ -16,11 +16,11 @@ object Utility {
     fields = fields[MyContext, Unit](
       Field("allUser", ListType(UserType),
         description = Some("description"),
-        complexity = constantComplexity(10),
         resolve = ctx => {
           import ctx.ctx.userDAO._
           getUsers
-        }
+        },
+        complexity = constantComplexity(10)
       )
     ))
 
@@ -30,7 +30,8 @@ object Utility {
     DeferredResolver.fetchers(
       usersFetcher,
       rolesFetcher,
-      userRolesFetcher,
+      rolesByUserFetcher,
+      usersByRoleFetcher
     )
 
   val rejectComplexQuery: QueryReducer[MyContext, MyContext] =

@@ -24,13 +24,13 @@ class UserDAO @Inject()(val dbConfigProvider: DatabaseConfigProvider)
 
   def getByIds(ids: Seq[Int]): Future[Seq[User]] = {
     db.run {
-      (Users filter (_.id inSet ids)).result
+      Users.filter(_.id inSet ids).result
     }
   }
 
   def getById(id: Int): Future[Option[User]] = {
     db.run {
-      (Users filter (_.id === id)).result.headOption
+      Users.filter(_.id === id).result.headOption
     }
   }
 

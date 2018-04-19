@@ -16,19 +16,28 @@ class UserRoleDAO @Inject()(val dbConfigProvider: DatabaseConfigProvider)
 
   import profile.api._
 
-  def getByIds(ids: Seq[Int]): Future[Seq[UserRole]] =
+  def getRolesByUserIds(userIds: Seq[Int]): Future[Seq[(Seq[UserRole], Role)]] =
     db.run {
-      (UserRoles filter (_.id inSet ids)).result
-    }
+      UserRoles
+        .filter(_.userId inSet userIds)
+        .join(Roles).on(_.roleId === _.id)
+        .result
+    }.map(result => {
+      result.groupBy(_._2.id).toSeq.map({
+        case (_, pairs) => pairs.map(_._1) -> pairs.head._2
+      })
+    })
 
-  def getByUserIds(userIds: Seq[Int]): Future[Seq[UserRole]] =
+  def getUsersByRoleIds(roleIds: Seq[Int]): Future[Seq[(Seq[UserRole], User)]] =
     db.run {
-      (UserRoles filter (_.userId inSet userIds)).result
-    }
-
-  def getByRoleIds(roleIds: Seq[Int]): Future[Seq[UserRole]] =
-    db.run {
-      (UserRoles filter (_.roleId inSet roleIds)).result
-    }
+      UserRoles
+        .filter(_.roleId inSet roleIds)
+        .join(Users).on(_.userId === _.id)
+        .result
+    }.map(result => {
+      result.groupBy(_._2.id).toSeq.map({
+        case (_, pairs) => pairs.map(_._1) -> pairs.head._2
+      })
+    })
 
 }
