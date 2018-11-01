@@ -1,0 +1,83 @@
+type Query {
+  factions(names: [String!]!): [Faction]!
+  rebels: Faction
+  empire: Faction
+
+  # Fetches an object given its ID
+  node(id: ID!): Node
+}
+
+# A faction in the Star Wars saga
+type Faction implements Node {
+  # The ID of an object
+  id: ID!
+
+  # The name of the faction.
+  name: String
+  ships(before: String, after: String, first: Int, last: Int): ShipConnection
+}
+
+# A connection to a list of items.
+type ShipConnection {
+  # Information to aid in pagination.
+  pageInfo: PageInfo!
+
+  # A list of edges.
+  edges: [ShipEdge]
+}
+
+# Information about pagination in a connection.
+type PageInfo {
+  # When paginating forwards, are there more items?
+  hasNextPage: Boolean!
+
+  # When paginating backwards, are there more items?
+  hasPreviousPage: Boolean!
+
+  # When paginating backwards, the cursor to continue.
+  startCursor: String
+
+  # When paginating forwards, the cursor to continue.
+  endCursor: String
+}
+
+# An edge in a connection.
+type ShipEdge {
+  # The item at the end of the edge.
+  node: Ship
+
+  # A cursor for use in pagination.
+  cursor: String!
+}
+
+# A ship in the Star Wars saga
+type Ship implements Node {
+  # The ID of an object
+  id: ID!
+  rawId: String!
+
+  # The name of the ship.
+  name: String
+}
+
+# An object with an ID
+interface Node {
+  # The id of the object.
+  id: ID!
+}
+
+type Mutation {
+  introduceShip(input: IntroduceShipInput!): IntroduceShipPayload
+}
+
+input IntroduceShipInput {
+  shipName: String!
+  factionId: ID!
+  clientMutationId: String
+}
+
+type IntroduceShipPayload {
+  ship: Ship
+  faction: Faction
+  clientMutationId: String
+}

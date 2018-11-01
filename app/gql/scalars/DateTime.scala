@@ -1,4 +1,4 @@
-package GraphQL.scalars
+package gql.scalars
 
 import java.time.OffsetDateTime
 

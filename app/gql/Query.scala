@@ -1,4 +1,4 @@
-package GraphQL
+package gql
 
 import models._
 import sangria.relay.{Connection, ConnectionDefinition}

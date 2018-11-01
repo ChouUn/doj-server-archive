@@ -1,4 +1,4 @@
-package GraphQL
+package gql
 
 import models.{Identifiable, Role, User, UserRole}
 import sangria.execution.deferred.{Fetcher, HasId, Relation, RelationIds}
@@ -45,23 +45,15 @@ object Definition {
     Relation[Role, (Seq[UserRole], Role), Int]("rolesByUser", _._1.map(_.userId), _._2)
 
   val usersByRoleFetcher: Fetcher[MyContext, User, (Seq[UserRole], User), Int] =
-    Fetcher.relOnly(
-      (ctx: MyContext, ids: RelationIds[User]) => ctx.userRoleDAO.getUsersByRoleIds(ids(usersByRoleRel))
-    )
+    Fetcher.relOnly((ctx: MyContext, ids: RelationIds[User]) => ctx.userRoleDAO.getUsersByRoleIds(ids(usersByRoleRel)))
 
   val rolesByUserFetcher: Fetcher[MyContext, Role, (Seq[UserRole], Role), Int] =
-    Fetcher.relOnly(
-      (ctx: MyContext, ids: RelationIds[Role]) => ctx.userRoleDAO.getRolesByUserIds(ids(rolesByUserRel))
-    )
+    Fetcher.relOnly((ctx: MyContext, ids: RelationIds[Role]) => ctx.userRoleDAO.getRolesByUserIds(ids(rolesByUserRel)))
 
   val usersFetcher: Fetcher[MyContext, User, User, Int] =
-    Fetcher(
-      (ctx: MyContext, ids: Seq[Int]) => ctx.userDAO.getByIds(ids)
-    )(HasId(_.id))
+    Fetcher((ctx: MyContext, ids: Seq[Int]) => ctx.userDAO.getByIds(ids))(HasId(_.id))
 
   val rolesFetcher: Fetcher[MyContext, Role, Role, Int] =
-    Fetcher(
-      (ctx: MyContext, ids: Seq[Int]) => ctx.roleDAO.getByIds(ids)
-    )(HasId(_.id))
+    Fetcher((ctx: MyContext, ids: Seq[Int]) => ctx.roleDAO.getByIds(ids))(HasId(_.id))
 
 }

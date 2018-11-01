@@ -8,7 +8,7 @@ import play.api.mvc.{AbstractController, ControllerComponents, Request, Result}
 import sangria.marshalling.playJson._
 import sangria.renderer.SchemaRenderer
 import sangria.schema.Schema
-import GraphQL.{MyContext, Utility}
+import gql.{MyContext, Utility}
 import utils.MyPostgresProfile
 
 import scala.concurrent.{ExecutionContext, Future}

@@ -1,20 +1,20 @@
-package GraphQL
+package gql
 
 import sangria.execution.deferred._
 import sangria.execution.{ExceptionHandler, HandledException, QueryReducer}
 import sangria.marshalling.ResultMarshaller
 import sangria.schema.{Field, ListType, ObjectType, _}
-import GraphQL.Definition._
+import gql.Definition._
 
 object Utility {
 
-  import GraphQL.Exception._
-  import GraphQL.Query._
+  import gql.Exception._
+  import gql.Query._
 
   val QueryType = ObjectType("Query",
     description = "The root of all... queries",
     fields = fields[MyContext, Unit](
-      Field("allUser", ListType(UserType),
+      Field("users", ListType(UserType),
         description = Some("description"),
         resolve = ctx => {
           import ctx.ctx.userDAO._
