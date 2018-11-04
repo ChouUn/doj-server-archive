@@ -12,7 +12,6 @@ object Utility {
   import gql.Query._
 
   val QueryType = ObjectType("Query",
-    description = "The root of all... queries",
     fields = fields[MyContext, Unit](
       Field("users", ListType(UserType),
         description = Some("description"),
@@ -39,8 +38,8 @@ object Utility {
 
   val ErrorHandler = ExceptionHandler {
     case (_: ResultMarshaller, TooComplexQueryException()) => HandledException("Too complex query. Please reduce the field selection.")
-    case (_, AuthenticationException(message)) ⇒ HandledException(message)
-    case (_, AuthorisationException(message)) ⇒ HandledException(message)
+    case (_, AuthenticationException(message)) => HandledException(message)
+    case (_, AuthorisationException(message)) => HandledException(message)
   }
 
   val schema = Schema(QueryType, None)

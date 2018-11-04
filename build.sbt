@@ -41,6 +41,7 @@ lazy val commonSettings = Seq(
     "com.github.tminglei" %% "slick-pg" % slickPgVersion exclude("org.postgresql" , "postgresql"),
     "com.github.tminglei" %% "slick-pg_play-json" % slickPgVersion,
     // Java security engine
+    // @ref http://pac4j.org/3.3.x/docs/index.html
     "org.pac4j" % "pac4j-oidc" % "3.3.0" exclude("commons-io" , "commons-io"),
     "org.pac4j" % "play-pac4j_2.12" % "6.1.0",
     // sangria

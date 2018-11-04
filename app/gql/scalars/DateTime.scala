@@ -19,7 +19,12 @@ object DateTime {
     case Failure(_) => Left(DateCoercionViolation)
   }
 
-  implicit val OffsetDateTimeType: ScalarType[OffsetDateTime] = ScalarType[OffsetDateTime]("DateTime",
+  implicit val OffsetDateTimeType: ScalarType[OffsetDateTime] = ScalarType[OffsetDateTime](
+    name = "DateTime",
+    description = Some("""
+      | A Datetime with an offset from UTC/Greenwich in the ISO-8601 calendar system,
+      | such as "2007-12-03T10:15:30+01:00".
+    """.stripMargin),
     coerceInput = {
       case ast.StringValue(s, _, _, _, _) => parseOffsetDateTime(s)
       case _ => Left(DateCoercionViolation)

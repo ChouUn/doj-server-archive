@@ -9,7 +9,7 @@ object Definition {
 
   import scalars.DateTime._
 
-  val IdentifiableType: InterfaceType[MyContext, Identifiable] = InterfaceType(
+  lazy val IdentifiableType: InterfaceType[MyContext, Identifiable] = InterfaceType(
     "Identifiable",
     fields[MyContext, Identifiable](
       Field("id", IntType, resolve = _.value.id)
