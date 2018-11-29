@@ -1,6 +1,6 @@
 import sbt.Keys.resolvers
 
-name := "doj_server_scala"
+name := "doj-server"
 
 version := "1.0"
 
