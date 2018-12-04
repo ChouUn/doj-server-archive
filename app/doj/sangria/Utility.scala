@@ -5,6 +5,7 @@ import sangria.execution.{ExceptionHandler, HandledException, QueryReducer}
 import sangria.marshalling.ResultMarshaller
 import sangria.schema.{Field, ListType, ObjectType, _}
 import doj.sangria.Definition._
+import sangria.validation.ValueCoercionViolation
 
 object Utility {
 
@@ -45,5 +46,7 @@ object Utility {
 
   def constantComplexity[Ctx](complexity: Double) =
     Some((_: Ctx, _: Args, child: Double) => child + complexity)
+
+  case object DateCoercionViolation extends ValueCoercionViolation("Date value expected")
 
 }

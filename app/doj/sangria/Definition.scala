@@ -8,7 +8,7 @@ import sangria.schema.{Field, IntType, InterfaceType, ListType, ObjectType, fiel
 
 object Definition {
 
-  import scalars.DateTime._
+  import scalars.OffsetDateTimeType._
 
   lazy val IdentifiableType: InterfaceType[MyContext, Identifiable] = InterfaceType(
     "Identifiable",
