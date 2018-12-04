@@ -1,7 +1,0 @@
-package gql
-
-import daos.{RoleDAO, UserDAO, UserRoleDAO}
-
-case class MyContext(userDAO: UserDAO, roleDAO: RoleDAO, userRoleDAO: UserRoleDAO) {
-
-}

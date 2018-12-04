@@ -1,6 +1,8 @@
 package controllers
 
-import daos._
+import doj.daos._
+import doj.sangria.{MyContext, Utility}
+import doj.util.MyPostgresProfile
 import javax.inject.{Inject, Singleton}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
@@ -8,8 +10,6 @@ import play.api.mvc.{AbstractController, ControllerComponents, Request, Result}
 import sangria.marshalling.playJson._
 import sangria.renderer.SchemaRenderer
 import sangria.schema.Schema
-import gql.{MyContext, Utility}
-import utils.MyPostgresProfile
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
@@ -84,7 +84,7 @@ class UtilityController @Inject()(cc: ControllerComponents,
 
     def generateMigrationSQL[U, T <: RelationalProfile#Table[U]](tableQuery: Query[T, U, Seq] with TableQuery[T])
                                                                 (implicit tag: ClassTag[T]) = {
-      import mixins.EntityTable
+      import doj.mixins.EntityTable
       import profile.api.tableQueryToTableQueryExtensionMethods
 
       val tableName = tableQuery.baseTableRow.tableName
