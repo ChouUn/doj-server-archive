@@ -3,15 +3,12 @@
 # --- !Ups
 
 CREATE TABLE "auth_role" (
-  "id"         SERIAL                                NOT NULL PRIMARY KEY,
-  "name"       VARCHAR(128)                          NOT NULL UNIQUE,
-  "created_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-  "updated_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-  "version"    INTEGER DEFAULT 1                     NOT NULL
+  "id"         SERIAL                                   NOT NULL PRIMARY KEY,
+  "name"       VARCHAR(128)                             NOT NULL UNIQUE,
+  "created_at" TIMESTAMP DEFAULT timezone('utc', now()) NOT NULL,
+  "updated_at" TIMESTAMP DEFAULT timezone('utc', now()) NOT NULL,
+  "version"    INTEGER DEFAULT 1                        NOT NULL
 );
-
-CREATE INDEX "auth_role_name_like"
-  ON "auth_role" ("name");
 
 CREATE TRIGGER "auth_role_update_trigger"
   BEFORE UPDATE

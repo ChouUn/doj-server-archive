@@ -1,6 +1,6 @@
 package doj.mixins
 
-import java.time.OffsetDateTime
+import java.time.LocalDateTime
 
 import slick.lifted.Rep
 
@@ -8,9 +8,9 @@ trait EntityTable {
 
   def id: Rep[Int]
 
-  def createdAt: Rep[OffsetDateTime]
+  def createdAt: Rep[LocalDateTime]
 
-  def updatedAt: Rep[OffsetDateTime]
+  def updatedAt: Rep[LocalDateTime]
 
   def version: Rep[Int]
 

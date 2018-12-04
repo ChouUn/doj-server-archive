@@ -1,7 +1,7 @@
 package doj.models
 
-import java.time.OffsetDateTime
+import java.time.LocalDateTime
 
 case class Role(id: Int, name: String,
-                createdAt: OffsetDateTime, updatedAt: OffsetDateTime, version: Int)
+                createdAt: LocalDateTime, updatedAt: LocalDateTime, version: Int)
   extends Identifiable

@@ -3,12 +3,12 @@
 # --- !Ups
 
 CREATE TABLE "auth_permission" (
-  "id"         SERIAL                                NOT NULL PRIMARY KEY,
-  "entity"     VARCHAR(128)                          NOT NULL,
-  "operation"  VARCHAR(128)                          NOT NULL,
-  "created_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-  "updated_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-  "version"    INTEGER DEFAULT 1                     NOT NULL
+  "id"         SERIAL                                   NOT NULL PRIMARY KEY,
+  "entity"     VARCHAR(128)                             NOT NULL,
+  "operation"  VARCHAR(128)                             NOT NULL,
+  "created_at" TIMESTAMP DEFAULT timezone('utc', now()) NOT NULL,
+  "updated_at" TIMESTAMP DEFAULT timezone('utc', now()) NOT NULL,
+  "version"    INTEGER DEFAULT 1                        NOT NULL
 );
 
 CREATE INDEX "auth_permission_entity_idx"
