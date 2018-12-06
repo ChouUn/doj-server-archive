@@ -3,11 +3,13 @@ package controllers
 import doj.daos._
 import doj.sangria.{MyContext, Utility}
 import doj.util.MyPostgresProfile
+import io.circe.syntax._
+import io.circe.{Json, JsonObject}
 import javax.inject.{Inject, Singleton}
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.libs.circe.Circe
 import play.api.libs.json._
-import play.api.mvc.{AbstractController, ControllerComponents, Request, Result}
-import sangria.marshalling.playJson._
+import play.api.mvc._
 import sangria.renderer.SchemaRenderer
 import sangria.schema.Schema
 
@@ -31,7 +33,9 @@ class UtilityController @Inject()(cc: ControllerComponents,
                                   userRoleDAO: UserRoleDAO,
                                   userPermissionDAO: UserPermissionDAO,
                                   rolePermissionDAO: RolePermissionDAO)
-                                 (implicit exec: ExecutionContext) extends AbstractController(cc) {
+                                 (implicit exec: ExecutionContext)
+  extends AbstractController(cc)
+    with Circe {
   val dbConfig = dbConfigProvider.get[MyPostgresProfile]
 
   import dbConfig.profile
@@ -79,7 +83,7 @@ class UtilityController @Inject()(cc: ControllerComponents,
     })
   }
 
-  def sql = Action {
+  def sql: Action[AnyContent] = Action {
     import slick.relational.RelationalProfile
 
     def generateMigrationSQL[U, T <: RelationalProfile#Table[U]](tableQuery: Query[T, U, Seq] with TableQuery[T])
@@ -116,35 +120,30 @@ class UtilityController @Inject()(cc: ControllerComponents,
     Ok(sqlStr)
   }
 
-  def codegen = Action.async {
+  def codegen: Action[AnyContent] = Action.async {
     codegenFuture
       .map(codegen => Ok(codegen.code))
   }
 
-  def graphiql = Action {
+  def graphiql: Action[AnyContent] = Action {
     Ok(views.html.graphiql())
   }
 
-  def graphql = Action.async(parse.json) { request: Request[JsValue] =>
-    val queryInfo = request.body.as[JsValue]
+  def graphql: Action[Json] = Action.async(circe.json) { implicit request: Request[Json] =>
+    val queryInfo: Json = request.body
     executeGraphQLQuery(Utility.schema, queryInfo)
   }
 
-  private def executeGraphQLQuery(schema: Schema[MyContext, Unit], queryInfo: JsValue): Future[Result] = {
-    import sangria.execution._
+  private def executeGraphQLQuery(schema: Schema[MyContext, Unit], queryInfo: Json): Future[Result] = {
+    import sangria.execution.{ErrorWithResolver, Executor, QueryAnalysisError}
+    import sangria.marshalling.circe._
     import sangria.parser.QueryParser
 
-    val JsObject(fields) = queryInfo
-    val JsString(query) = fields("query")
-    val operation = fields.get("operationName") collect {
-      case JsString(op) => op
-    }
+    val cursor = queryInfo.hcursor
 
-    val vars = fields.get("variables") match {
-      case Some(obj: JsObject) => obj
-      case Some(JsString(s)) if s.trim.nonEmpty => Json.parse(s)
-      case _ => JsObject.empty
-    }
+    val query = cursor.get[String]("query").getOrElse("")
+    val operation = cursor.get[Option[String]]("operationName").getOrElse(None)
+    val variables: Json = cursor.get[JsonObject]("variables").getOrElse(JsonObject.empty).asJson
 
     QueryParser.parse(query) match {
       // query parsed successfully, time to execute it!
@@ -153,7 +152,7 @@ class UtilityController @Inject()(cc: ControllerComponents,
           .execute(
             schema,
             queryDocument,
-            variables = vars,
+            variables = variables,
             userContext = MyContext(userDAO, roleDAO, userRoleDAO),
             operationName = operation,
             queryReducers = Utility.rejectComplexQuery :: Nil,
@@ -169,12 +168,12 @@ class UtilityController @Inject()(cc: ControllerComponents,
       // can't parse GraphQL query, return error
       case Failure(error) =>
         Future {
-          BadRequest(Json.stringify(JsString(error.getMessage)))
+          BadRequest(JsString(error.getMessage))
         }
     }
   }
 
-  def schema = Action {
+  def schema: Action[AnyContent] = Action {
     Ok(SchemaRenderer renderSchema Utility.schema)
   }
 

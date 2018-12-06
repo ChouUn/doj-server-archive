@@ -10,7 +10,7 @@ trait MyPostgresProfile extends ExPostgresProfile
   with PgDate2Support
   with PgRangeSupport
   with PgHStoreSupport
-  with PgPlayJsonSupport
+  with PgCirceJsonSupport
   with PgSearchSupport
   with PgNetSupport
   with PgLTreeSupport {
@@ -20,8 +20,6 @@ trait MyPostgresProfile extends ExPostgresProfile
   // Add back `capabilities.insertOrUpdate` to enable native `upsert` support; for postgres 9.5+
   override protected def computeCapabilities: Set[Capability] =
     super.computeCapabilities + JdbcCapabilities.insertOrUpdate
-
-  override val api = MyAPI
 
   object MyAPI extends API
     with ArrayImplicits
@@ -33,13 +31,17 @@ trait MyPostgresProfile extends ExPostgresProfile
     with HStoreImplicits
     with SearchImplicits
     with SearchAssistants {
-    implicit val strListTypeMapper = new SimpleArrayJdbcType[String]("text").to(_.toList)
-    implicit val playJsonArrayTypeMapper =
-      new AdvancedArrayJdbcType[JsValue](pgjson,
-        (s) => utils.SimpleArrayUtils.fromString[JsValue](Json.parse(_))(s).orNull,
-        (v) => utils.SimpleArrayUtils.mkString[JsValue](_.toString())(v)
+    implicit val strListTypeMapper: DriverJdbcType[List[String]] =
+      new SimpleArrayJdbcType[String]("text").to(_.toList)
+    implicit val playJsonArrayTypeMapper: DriverJdbcType[List[JsValue]] =
+      new AdvancedArrayJdbcType[JsValue](
+        pgjson,
+        (s: String) => utils.SimpleArrayUtils.fromString[JsValue](Json.parse)(s).orNull,
+        (v: Seq[JsValue]) => utils.SimpleArrayUtils.mkString[JsValue](_.toString())(v)
       ).to(_.toList)
   }
+
+  override val api: MyAPI.type = MyAPI
 
 }
 
