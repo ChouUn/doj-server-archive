@@ -1,10 +1,9 @@
 package doj.daos
 
 import doj.mixins.UserRoleMixin
-import doj.models.{Role, User}
+import doj.models.{Role, User, UserRole}
 import doj.util.MyPostgresProfile
 import javax.inject.{Inject, Singleton}
-import doj.models.{User, UserRole}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 
 import scala.concurrent.{ExecutionContext, Future}

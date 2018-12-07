@@ -3,6 +3,7 @@ package controllers
 import doj.daos._
 import doj.sangria.{MyContext, Utility}
 import doj.util.MyPostgresProfile
+import io.circe.parser.{parse => parseJson}
 import io.circe.syntax._
 import io.circe.{Json, JsonObject}
 import javax.inject.{Inject, Singleton}
@@ -141,9 +142,12 @@ class UtilityController @Inject()(cc: ControllerComponents,
 
     val cursor = queryInfo.hcursor
 
-    val query = cursor.get[String]("query").getOrElse("")
-    val operation = cursor.get[Option[String]]("operationName").getOrElse(None)
-    val variables: Json = cursor.get[JsonObject]("variables").getOrElse(JsonObject.empty).asJson
+    val query: String = cursor.get[String]("query").getOrElse("")
+    val operation: Option[String] = cursor.get[Option[String]]("operationName").getOrElse(None)
+    val variables: Json = cursor.get[Json]("variables")
+      .toOption.map({ _.withString(str => parseJson(str).getOrElse(Json.Null)) }) // JString -> JObject
+      .flatMap(_.asObject).getOrElse(JsonObject.empty) // except JObject -> JObject.empty
+      .asJson // JObject -> Json
 
     QueryParser.parse(query) match {
       // query parsed successfully, time to execute it!

@@ -1,10 +1,9 @@
 package doj.sangria
 
-import doj.models._
-import sangria.relay.{Connection, ConnectionDefinition}
-import macros.Macros.getArgument
-import Definition.RoleType
 import doj.models.Role
+import doj.sangria.Definition.RoleType
+import macros.Macros.getArgument
+import sangria.relay.{Connection, ConnectionDefinition}
 
 object Query {
 

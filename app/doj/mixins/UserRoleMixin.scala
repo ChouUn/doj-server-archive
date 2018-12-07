@@ -1,7 +1,7 @@
 package doj.mixins
 
-import doj.util.MyPostgresProfile
 import doj.models.UserRole
+import doj.util.MyPostgresProfile
 import play.api.db.slick.HasDatabaseConfigProvider
 
 trait UserRoleMixin extends Object with UserMixin with RoleMixin {

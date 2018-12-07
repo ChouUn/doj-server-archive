@@ -1,10 +1,10 @@
 package doj.sangria
 
+import doj.sangria.Definition._
 import sangria.execution.deferred._
 import sangria.execution.{ExceptionHandler, HandledException, QueryReducer}
 import sangria.marshalling.ResultMarshaller
 import sangria.schema.{Field, ListType, ObjectType, _}
-import doj.sangria.Definition._
 import sangria.validation.ValueCoercionViolation
 
 object Utility {
