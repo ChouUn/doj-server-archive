@@ -4,6 +4,8 @@ name := "doj-server"
 
 version := "1.0"
 
+addCompilerPlugin("org.scalamacros" % "paradise_2.12.7" % "2.1.1")
+
 val playVersion = "2.6.20"
 val playSlickVersion = "3.0.3"
 val slickVersion = "3.2.3"
