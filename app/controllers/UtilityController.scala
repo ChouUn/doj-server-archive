@@ -3,10 +3,9 @@ package controllers
 import doj.daos._
 import doj.sangria.{MyContext, Utility}
 import doj.util.MyPostgresProfile
-import io.circe.parser.{parse => parseJson}
+import io.circe.generic.JsonCodec
 import io.circe.syntax._
 import io.circe.{Json, JsonObject}
-import io.circe.generic.auto._
 import javax.inject.{Inject, Singleton}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.circe.Circe
@@ -141,7 +140,8 @@ class UtilityController @Inject()(cc: ControllerComponents,
     import sangria.marshalling.circe._
     import sangria.parser.QueryParser
 
-    case class QueryInfo (query: Option[String], operationName: Option[String], variables: Option[JsonObject])
+    @JsonCodec
+    case class QueryInfo(query: Option[String], operationName: Option[String], variables: Option[JsonObject])
     val qi: Option[QueryInfo] = queryInfo.as[QueryInfo].toOption
 
     val query: String = qi.flatMap(_.query).getOrElse("")
