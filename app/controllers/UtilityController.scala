@@ -6,6 +6,7 @@ import doj.util.MyPostgresProfile
 import io.circe.parser.{parse => parseJson}
 import io.circe.syntax._
 import io.circe.{Json, JsonObject}
+import io.circe.generic.auto._
 import javax.inject.{Inject, Singleton}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.circe.Circe
@@ -140,14 +141,12 @@ class UtilityController @Inject()(cc: ControllerComponents,
     import sangria.marshalling.circe._
     import sangria.parser.QueryParser
 
-    val cursor = queryInfo.hcursor
+    case class QueryInfo (query: Option[String], operationName: Option[String], variables: Option[JsonObject])
+    val qi: Option[QueryInfo] = queryInfo.as[QueryInfo].toOption
 
-    val query: String = cursor.get[String]("query").getOrElse("")
-    val operation: Option[String] = cursor.get[Option[String]]("operationName").getOrElse(None)
-    val variables: Json = cursor.get[Json]("variables")
-      .toOption.map({ _.withString(str => parseJson(str).getOrElse(Json.Null)) }) // JString -> JObject
-      .flatMap(_.asObject).getOrElse(JsonObject.empty) // except JObject -> JObject.empty
-      .asJson // JObject -> Json
+    val query: String = qi.flatMap(_.query).getOrElse("")
+    val operation: Option[String] = qi.flatMap(_.operationName)
+    val variables = qi.flatMap(_.variables).getOrElse(JsonObject.empty).asJson
 
     QueryParser.parse(query) match {
       // query parsed successfully, time to execute it!
