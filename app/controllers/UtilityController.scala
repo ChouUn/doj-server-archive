@@ -9,7 +9,6 @@ import io.circe.{Json, JsonObject}
 import javax.inject.{Inject, Singleton}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.circe.Circe
-import play.api.libs.json._
 import play.api.mvc._
 import sangria.renderer.SchemaRenderer
 import sangria.schema.Schema
@@ -171,7 +170,7 @@ class UtilityController @Inject()(cc: ControllerComponents,
       // can't parse GraphQL query, return error
       case Failure(error) =>
         Future {
-          BadRequest(JsString(error.getMessage))
+          BadRequest(error.getMessage.asJson)
         }
     }
   }

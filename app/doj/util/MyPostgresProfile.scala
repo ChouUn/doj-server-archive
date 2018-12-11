@@ -1,7 +1,7 @@
 package doj.util
 
 import com.github.tminglei.slickpg._
-import play.api.libs.json.{JsValue, Json}
+import io.circe.{Json, parser => jsonParser}
 import slick.basic.Capability
 import slick.jdbc.JdbcCapabilities
 
@@ -21,6 +21,8 @@ trait MyPostgresProfile extends ExPostgresProfile
   override protected def computeCapabilities: Set[Capability] =
     super.computeCapabilities + JdbcCapabilities.insertOrUpdate
 
+  override val api: MyAPI.type = MyAPI
+
   object MyAPI extends API
     with ArrayImplicits
     with DateTimeImplicits
@@ -31,17 +33,18 @@ trait MyPostgresProfile extends ExPostgresProfile
     with HStoreImplicits
     with SearchImplicits
     with SearchAssistants {
+
     implicit val strListTypeMapper: DriverJdbcType[List[String]] =
       new SimpleArrayJdbcType[String]("text").to(_.toList)
-    implicit val playJsonArrayTypeMapper: DriverJdbcType[List[JsValue]] =
-      new AdvancedArrayJdbcType[JsValue](
-        pgjson,
-        (s: String) => utils.SimpleArrayUtils.fromString[JsValue](Json.parse)(s).orNull,
-        (v: Seq[JsValue]) => utils.SimpleArrayUtils.mkString[JsValue](_.toString())(v)
-      ).to(_.toList)
-  }
 
-  override val api: MyAPI.type = MyAPI
+    implicit val jsonArrayTypeMapper: DriverJdbcType[List[Json]] =
+      new AdvancedArrayJdbcType[Json](
+        pgjson,
+        (s: String) => utils.SimpleArrayUtils.fromString[Json](jsonParser.parse(_).getOrElse(Json.Null))(s).orNull,
+        (v: Seq[Json]) => utils.SimpleArrayUtils.mkString[Json](_.toString)(v)
+      ).to(_.toList)
+
+  }
 
 }
 
