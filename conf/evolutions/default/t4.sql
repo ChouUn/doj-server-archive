@@ -13,8 +13,8 @@ CREATE TABLE core_problem (
 
     author           VARCHAR(32),
     provider_id      INTEGER
-        CONSTRAINT core_problem_provider_id_fk_auth_user_id
-        REFERENCES auth_user
+        CONSTRAINT core_problem_provider_id_fk_user_id
+        REFERENCES user
             DEFERRABLE INITIALLY DEFERRED,
     private          BOOLEAN                  NOT NULL,
 
