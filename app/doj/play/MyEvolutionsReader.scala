@@ -14,9 +14,8 @@ import scala.util.matching.Regex
 class MyEvolutionsReader @Inject()(environment: Environment) extends EvolutionsReader {
   private def closeQuietly(closeable: Closeable): Unit = {
     try {
-      if (closeable != null) {
+      if (closeable != null)
         closeable.close()
-      }
     } catch {
       case e: IOException => Logger.warn("Error closing stream", e)
     }
@@ -32,7 +31,9 @@ class MyEvolutionsReader @Inject()(environment: Environment) extends EvolutionsR
         len = stream.read(buffer)
       }
       out.toByteArray
-    } finally closeQuietly(stream)
+    } finally {
+      closeQuietly(stream)
+    }
   }
 
   private def readStreamAsString(stream: InputStream)(implicit codec: Codec): String = {
@@ -42,31 +43,37 @@ class MyEvolutionsReader @Inject()(environment: Environment) extends EvolutionsR
   /**
     * Read evolution files from the application environment.
     * egs:
-    * - 001-user.sql
-    * - 002-problem.sql
+    * - 001-user.sql     - OK
+    * - 2-role.sql       - OK
+    * - 003-problem.sql  - CONFLICT with 003-contest.sql
+    * - 003-contest.sql  - CONFLICT with 003-problem.sql
+    * - 005-status.sql   - SKIPPED due to previous failure
+    * - t06-perms.sql    - IGNORED due to unknown pattern
+    * -
     */
   def loadResource(db: String, revision: Int): Option[InputStream] = {
     val ptn: Regex = s"^0*$revision(-[^.]+)?\\.sql$$".r
 
-    val dir: Option[File] = environment.getExistingFile(Evolutions.directoryName(db))
-
-    dir
-      .flatMap {
-        _.list().filter {
-          ptn.findFirstIn(_).isDefined
+    environment.getExistingFile(Evolutions.directoryName(db))
+      .flatMap { dir =>
+        dir.list().toList.filter { filename =>
+          ptn.findFirstIn(filename).isDefined
         } match {
-          case Array(only) => Some(only)
-          case _ => None
+          case Nil => None // has no more evolutions
+          case filename :: Nil => Some(filename) // has the next evolution
+          case filenames => // has a conflict between evolutions
+            val str = filenames.map(str => s""""$str"""").mkString(", ")
+            throw new AssertionError(s"CONFLICT: more than one $revision exists. There are $str.")
         }
       }
       .map(filename => s"${Evolutions.directoryName(db)}/$filename")
       .flatMap(environment.getExistingFile)
-      .map(f => java.nio.file.Files.newInputStream(f.toPath))
+      .map(file => java.nio.file.Files.newInputStream(file.toPath))
   }
 
   def evolutions(db: String): Seq[Evolution] = {
-    val upsMarker = """^--\s*!Ups.*$""".r
-    val downsMarker = """^--\s*!Downs.*$""".r
+    val upsMarker = """^--\s*!Ups\s*$""".r
+    val downsMarker = """^--\s*!Downs\s*$""".r
 
     val UPS = "UPS"
     val DOWNS = "DOWNS"
@@ -86,24 +93,27 @@ class MyEvolutionsReader @Inject()(environment: Environment) extends EvolutionsR
 
     Collections.unfoldLeft(1) { revision =>
       loadResource(db, revision).map { stream =>
-        (revision + 1, (revision, readStreamAsString(stream)(Codec.UTF8)))
+        val script = readStreamAsString(stream)(Codec.UTF8)
+        (revision + 1, (revision, script))
       }
-    }.sortBy(_._1).map {
-      case (revision, script) =>
-        val parsed = Collections.unfoldLeft(("", script.split('\n').toList.map(_.trim))) {
-          case (_, Nil) => None
-          case (context, lines) =>
-            val (some, next) = lines.span(l => !isMarker(l))
-            Some((next.headOption.map(c => (mapUpsAndDowns(c), next.tail)).getOrElse("" -> Nil),
-              context -> some.mkString("\n")))
-        }.reverse.drop(1).groupBy(i => i._1).mapValues {
-          _.map(_._2).mkString("\n").trim
-        }
+    }.sortBy(_._1).map { case (revision, script) =>
+      val parsed = Collections.unfoldLeft("" -> script.split('\n').toList.map(_.trim)) {
+        case (_, Nil) => None
+        case (upOrDown, below) =>
+          val (lines, rest) = below.span(line => !isMarker(line))
+          val nextLoop = rest.headOption match {
+            case Some(marker) => mapUpsAndDowns(marker) -> rest.tail
+            case None => "" -> Nil
+          }
+          Some((nextLoop, upOrDown -> lines.mkString("\n")))
+      }.reverse.drop(1).groupBy(_._1).mapValues { tuples =>
+        tuples.map(_._2).mkString("\n").trim
+      }
 
-        Evolution(
-          revision,
-          parsed.getOrElse(UPS, ""),
-          parsed.getOrElse(DOWNS, ""))
+      Evolution(
+        revision,
+        parsed.getOrElse(UPS, ""),
+        parsed.getOrElse(DOWNS, ""))
     }
   }
 }
