@@ -49,7 +49,6 @@ class MyEvolutionsReader @Inject()(environment: Environment) extends EvolutionsR
     * - 003-contest.sql  - CONFLICT with 003-problem.sql
     * - 005-status.sql   - SKIPPED due to previous failure
     * - t06-perms.sql    - IGNORED due to unknown pattern
-    * -
     */
   def loadResource(db: String, revision: Int): Option[InputStream] = {
     val ptn: Regex = s"^0*$revision(-[^.]+)?\\.sql$$".r
